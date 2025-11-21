@@ -5,7 +5,7 @@ Simple neural network for image recognition.
 
 -------------------------------
 
-Initioal plan:
+Initial plan:
 
 Iteration 1:
 - [DONE] Продумать структуру проекта, создать нужные файлы и классы (реализацию некоторых из которых возможно напишу позже).
