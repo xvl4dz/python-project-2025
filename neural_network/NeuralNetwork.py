@@ -1,30 +1,38 @@
 import numpy as np
 import pickle
-from .Layer import Layer
-from .Cost import Cost
+from typing import List, Tuple, Dict, Optional, Union, Any
+
+try:
+    # When running as part of the package
+    from .Layer import Layer
+    from .Cost import get_cost_function 
+except ImportError:
+    # When running directly
+    from Layer import Layer
+    from Cost import get_cost_function 
 
 class NeuralNetwork:
-    def __init__(self, input_size, hidden_layers, output_size, 
-                 learning_rate=0.1, activation='sigmoid', 
-                 output_activation=None, cost_function='mse'):
+    def __init__(self, input_size: int, hidden_layers: List[int], output_size: int,
+                 learning_rate: float = 0.1, activation: str = 'sigmoid',
+                 output_activation: Optional[str] = None, cost_function: str = 'mse') -> None:
         """
         Initialize neural network
         
         Args:
-            input_size: Number of input nodes
-            hidden_layers: List of integers specifying nodes in each hidden layer
-            output_size: Number of output nodes
-            learning_rate: Learning rate for training
-            activation: Activation function for hidden layers
-            output_activation: Activation function for output layer (None for automatic)
-            cost_function: Cost function to use ('mse', 'cross_entropy', 'binary_cross_entropy')
+            input_size (int): Number of input nodes
+            hidden_layers (List[int]): List of integers specifying nodes in each hidden layer
+            output_size (int): Number of output nodes
+            learning_rate (float): Learning rate for training. Defaults to 0.1.
+            activation (str): Activation function for hidden layers. Defaults to 'sigmoid'.
+            output_activation (Optional[str]): Activation function for output layer (None for automatic). Defaults to None.
+            cost_function (str): Cost function to use ('mse', 'cross_entropy', 'binary_cross_entropy'). Defaults to 'mse'.
         """
         self.input_size = input_size
         self.hidden_layers = hidden_layers
         self.output_size = output_size
         self.learning_rate = learning_rate
         self.cost_function_name = cost_function
-        self.cost_fn, self.cost_derivative = Cost.get_cost_function(cost_function)
+        self.cost_fn, self.cost_derivative = get_cost_function(cost_function)
         
         # Determine output activation automatically if not specified
         if output_activation is None:
@@ -48,8 +56,15 @@ class NeuralNetwork:
             layer = Layer(layer_sizes[i], layer_sizes[i + 1], layer_activation)
             self.layers.append(layer)
     
-    def forward(self, X):
-        """Forward pass through the network"""
+    def forward(self, X: np.ndarray) -> np.ndarray:
+        """Forward pass through the network
+        
+        Args:
+            X (np.ndarray): Input data of shape (n_samples, n_features)
+            
+        Returns:
+            np.ndarray: Network output of shape (n_samples, output_size)
+        """
         current_output = X.T  # batch processing
     
         for i, layer in enumerate(self.layers):
@@ -57,8 +72,14 @@ class NeuralNetwork:
     
         return current_output.T 
     
-    def backward(self, X, y, output):
-        """Backward pass through the network"""
+    def backward(self, X: np.ndarray, y: np.ndarray, output: np.ndarray) -> None:
+        """Backward pass through the network
+        
+        Args:
+            X (np.ndarray): Input data of shape (n_samples, n_features)
+            y (np.ndarray): Target labels
+            output (np.ndarray): Network predictions from forward pass
+        """
         # batch processing
         X = X.T
         y = y.T
@@ -71,17 +92,40 @@ class NeuralNetwork:
         for layer in reversed(self.layers):
             d_output = layer.backward(d_output, self.learning_rate)
     
-    def predict(self, X):
-        """Make predictions"""
+    def predict(self, X: np.ndarray) -> np.ndarray:
+        """Make predictions
+        
+        Args:
+            X (np.ndarray): Input data of shape (n_samples, n_features)
+            
+        Returns:
+            np.ndarray: Predictions of shape (n_samples, output_size)
+        """
         return self.forward(X)
     
-    def compute_loss(self, X, y):
-        """Compute current loss"""
+    def compute_loss(self, X: np.ndarray, y: np.ndarray) -> float:
+        """Compute current loss
+        
+        Args:
+            X (np.ndarray): Input data of shape (n_samples, n_features)
+            y (np.ndarray): Target labels
+            
+        Returns:
+            float: Scalar loss value
+        """
         predictions = self.predict(X)
         return self.cost_fn(y, predictions)
     
-    def compute_accuracy(self, X, y):
-        """Compute accuracy for classification tasks"""
+    def compute_accuracy(self, X: np.ndarray, y: np.ndarray) -> float:
+        """Compute accuracy for classification tasks
+        
+        Args:
+            X (np.ndarray): Input data of shape (n_samples, n_features)
+            y (np.ndarray): Target labels
+            
+        Returns:
+            float: Accuracy between 0 and 1
+        """
         predictions = self.predict(X)
         
         if self.output_size == 1:  # Binary classification
@@ -94,20 +138,12 @@ class NeuralNetwork:
         
         return accuracy
     
-    def get_parameters(self):
-        """Get all network parameters"""
-        parameters = []
-        for layer in self.layers:
-            parameters.append(layer.get_parameters())
-        return parameters
-    
-    def set_parameters(self, parameters):
-        """Set all network parameters"""
-        for layer, (weights, biases) in zip(self.layers, parameters):
-            layer.set_parameters(weights, biases)
-
-    def get_parameters(self):
-        """Get all network parameters for saving"""
+    def get_parameters(self) -> List[Dict[str, np.ndarray]]:
+        """Get all network parameters for saving
+        
+        Returns:
+            List[Dict[str, np.ndarray]]: List of dictionaries containing 'weights' and 'biases' for each layer
+        """
         parameters = []
         for layer in self.layers:
             weights, biases = layer.get_parameters()
@@ -117,13 +153,21 @@ class NeuralNetwork:
             })
         return parameters
 
-    def set_parameters(self, parameters):
-        """Set network parameters from loaded data"""
+    def set_parameters(self, parameters: List[Dict[str, np.ndarray]]) -> None:
+        """Set network parameters from loaded data
+        
+        Args:
+            parameters (List[Dict[str, np.ndarray]]): List of dictionaries containing 'weights' and 'biases' for each layer
+        """
         for layer, param_dict in zip(self.layers, parameters):
             layer.set_parameters(param_dict['weights'], param_dict['biases'])
 
-    def save(self, filepath):
-        """Save model to file"""
+    def save(self, filepath: str) -> None:
+        """Save model to file
+        
+        Args:
+            filepath (str): Path to save the model file
+        """
         import pickle
         
         model_data = {
@@ -144,8 +188,15 @@ class NeuralNetwork:
         print(f"Model saved to {filepath}")
 
     @classmethod
-    def load_model(cls, filepath):
-        """Load model from file and recreate the neural network"""
+    def load_model(cls, filepath: str) -> 'NeuralNetwork':
+        """Load model from file and recreate the neural network
+        
+        Args:
+            filepath (str): Path to saved model file
+            
+        Returns:
+            NeuralNetwork: Reconstructed neural network with loaded parameters
+        """
         with open(filepath, 'rb') as f:
             model_data = pickle.load(f)
         

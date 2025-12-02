@@ -1,10 +1,16 @@
 import matplotlib.pyplot as plt
 import numpy as np
+from typing import Any, Dict
 
 class Visualizer:
     @staticmethod
-    def plot_training_history(history):
-        """Plot training and validation metrics"""
+    def plot_training_history(history: Dict[str, list]) -> None:
+        """
+        Plot training and validation metrics.
+        
+        Args:
+            history (Dict[str, list]): Training history from Trainer
+        """
         fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 4))
         
         # loss
@@ -31,8 +37,17 @@ class Visualizer:
         plt.show()
     
     @staticmethod
-    def plot_decision_boundary(model, X, y, title="Decision Boundary"):
-        """Plot decision boundary for 2D data"""
+    def plot_decision_boundary(model: Any, X: np.ndarray, y: np.ndarray, 
+                               title: str = "Decision Boundary") -> None:
+        """
+        Plot decision boundary for 2D data.
+        
+        Args:
+            model (Any): Trained neural network model
+            X (np.ndarray): Input data of shape (n_samples, 2)
+            y (np.ndarray): Target labels
+            title (str): Plot title. Defaults to "Decision Boundary".
+        """
         if X.shape[1] != 2:
             print("Decision boundary plot only available for 2D input")
             return
@@ -67,8 +82,17 @@ class Visualizer:
         plt.show()
     
     @staticmethod
-    def plot_predictions_comparison(model, X, y, title="Predictions vs Actual"):
-        """Compare predictions with actual values"""
+    def plot_predictions_comparison(model: Any, X: np.ndarray, y: np.ndarray, 
+                                    title: str = "Predictions vs Actual") -> None:
+        """
+        Compare predictions with actual values.
+        
+        Args:
+            model (Any): Trained neural network model
+            X (np.ndarray): Input data
+            y (np.ndarray): Target labels
+            title (str): Plot title. Defaults to "Predictions vs Actual".
+        """
         predictions = model.predict(X)
         
         plt.figure(figsize=(10, 4))
