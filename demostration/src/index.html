@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MNIST-like Drawing Grid with Server</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/dat-gui/0.7.9/dat.gui.min.js"></script>
+</head>
+<body>
+    <div class="container">
+        <div class="controls">
+            <button id="clearGrid">Clear Grid</button>
+            <button id="toggleColors">Toggle Colors</button>
+            <button id="toggleGrid">Toggle Grid</button>
+            <button id="showData">Show Data</button>
+            <button id="exportData">Export Data</button>
+            <button id="loadData">Load Data</button>
+            <button id="serverLoad">Load from Server</button>
+            <button id="serverSave">Save to Server</button>
+            <button id="serverClear">Clear Server</button>
+        </div>
+        <div id="gridContainer" class="grid-container"></div>
+        <div id="info" class="info"></div>
+    </div>
+
+    <script type="module" src="index.js"></script>
+</body>
+</html>
