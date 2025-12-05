@@ -10,33 +10,10 @@ from datetime import datetime
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
 from neural_network import NeuralNetwork
+
+
 model_path = "trained_mnist_model.pkl"
 
-def load_model(filepath):
-    """Load model from file"""
-    with open(filepath, 'rb') as f:
-        model_data = pickle.load(f)
-    
-    arch = model_data['architecture']
-    parameters = model_data['parameters']
-    
-    model = NeuralNetwork(
-        input_size=arch['input_size'],
-        hidden_layers=arch['hidden_layers'],
-        output_size=arch['output_size'],
-        learning_rate=arch['learning_rate'],
-        activation=arch['activation'],
-        cost_function=arch['cost_function']
-    )
-    
-    model.set_parameters(parameters)
-    
-    print(f"Model loaded from {filepath}")
-    print(f"Architecture: {arch['input_size']} -> {arch['hidden_layers']} -> {arch['output_size']}")
-    
-    return model
-
-model = load_model(model_path)
 
 app = Flask(__name__)
 CORS(app)
@@ -44,6 +21,7 @@ CORS(app)
 current_drawing = None
 grid_size = 28
 current_prediction = None
+model = NeuralNetwork.load_model(model_path)
 
 @app.route('/')
 def serve_index():

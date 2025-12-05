@@ -1,9 +1,17 @@
 import numpy as np
 from tqdm import tqdm
 import time
+from typing import Tuple, Optional, Dict, Any
 
 class Trainer:
-    def __init__(self, model, verbose=True):
+    def __init__(self, model: Any, verbose: bool = True) -> None:
+        """
+        Initialize trainer for neural network.
+        
+        Args:
+            model (Any): NeuralNetwork model to train
+            verbose (bool): Whether to print training progress. Defaults to True.
+        """
         self.model = model
         self.verbose = verbose
         self.history = {
@@ -13,16 +21,21 @@ class Trainer:
             'val_accuracy': []
         }
     
-    def train(self, X, y, epochs, validation_data=None, batch_size=None):
+    def train(self, X: np.ndarray, y: np.ndarray, epochs: int, 
+              validation_data: Optional[Tuple[np.ndarray, np.ndarray]] = None, 
+              batch_size: Optional[int] = None) -> Dict[str, list]:
         """
-        Train the neural network
+        Train the neural network.
         
         Args:
-            X: Training features
-            y: Training labels
-            epochs: Number of training epochs
-            validation_data: Tuple (X_val, y_val) for validation
-            batch_size: Batch size for mini-batch gradient descent (None for full batch)
+            X (np.ndarray): Training features
+            y (np.ndarray): Training labels
+            epochs (int): Number of training epochs
+            validation_data (Optional[Tuple]): Tuple (X_val, y_val) for validation. Defaults to None.
+            batch_size (Optional[int]): Batch size for mini-batch gradient descent. Defaults to None (full batch).
+            
+        Returns:
+            Dict[str, list]: Training history
         """
         if self.verbose:
             print(f"Starting training for {epochs} epochs...")
@@ -80,8 +93,15 @@ class Trainer:
         
         return self.history
     
-    def _print_progress(self, epoch, epochs, has_validation):
-        """Print training progress"""
+    def _print_progress(self, epoch: int, epochs: int, has_validation: bool) -> None:
+        """
+        Print training progress.
+        
+        Args:
+            epoch (int): Current epoch number
+            epochs (int): Total number of epochs
+            has_validation (bool): Whether validation data is provided
+        """
         train_loss = self.history['train_loss'][-1]
         train_acc = self.history['train_accuracy'][-1]
         

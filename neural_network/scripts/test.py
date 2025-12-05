@@ -1,9 +1,11 @@
 import numpy as np
 import pandas as pd
-from .NeuralNetwork import NeuralNetwork
-from .Trainer import Trainer
-from .Visualizer import Visualizer
 import os
+import sys
+
+from NeuralNetwork import NeuralNetwork
+from Trainer import Trainer
+from Visualizer import Visualizer
 
 def load_mnist_data(train_path, test_path):
     """Load MNIST data from CSV files"""

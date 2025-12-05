@@ -2,8 +2,9 @@ import numpy as np
 import pandas as pd
 import os
 import pickle
-from .NeuralNetwork import NeuralNetwork
-from .Trainer import Trainer
+
+from NeuralNetwork import NeuralNetwork
+from Trainer import Trainer
 
 def load_and_preprocess_mnist(train_path, test_path, use_full_dataset=True):
     """Load and preprocess MNIST data"""
