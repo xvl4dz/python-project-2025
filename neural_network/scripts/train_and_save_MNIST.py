@@ -1,11 +1,10 @@
 import numpy as np
 import pandas as pd
 import os
-import sys
+import pickle
 
 from NeuralNetwork import NeuralNetwork
 from Trainer import Trainer
-from Visualizer import Visualizer
 
 def apply_transformations(images, params):
     """
@@ -20,7 +19,7 @@ def apply_transformations(images, params):
         Augmented images of shape (N, 784)
     """
     #Lots of comments here or I'll forget what all of this does ;)
-    
+
     N, D = images.shape
     H = W = int(np.sqrt(D))
     
@@ -160,57 +159,40 @@ def load_and_preprocess_mnist(train_path, test_path, use_full_dataset=True, augm
     
     return X_train, y_train_one_hot, X_test, y_test_one_hot
 
-def create_small_subset(X_train, y_train, X_test, y_test, train_samples=10000, test_samples=2000):
-    """Create smaller subset for faster testing"""
-    if train_samples < len(X_train):
-        indices = np.random.choice(len(X_train), train_samples, replace=False)
-        X_train = X_train[indices]
-        y_train = y_train[indices]
+def save_model(model, filepath):
+    """Save model architecture and parameters to file"""
+    model_data = {
+        'architecture': {
+            'input_size': model.input_size,
+            'hidden_layers': model.hidden_layers,
+            'output_size': model.output_size,
+            'learning_rate': model.learning_rate,
+            'activation': model.layers[0].activation.name,  # same activation for all hidden layers
+            'cost_function': model.cost_function_name
+        },
+        'parameters': model.get_parameters()
+    }
     
-    if test_samples < len(X_test):
-        indices = np.random.choice(len(X_test), test_samples, replace=False)
-        X_test = X_test[indices]
-        y_test = y_test[indices]
+    with open(filepath, 'wb') as f:
+        pickle.dump(model_data, f)
     
-    return X_train, y_train, X_test, y_test
+    print(f"Model saved to {filepath}")
 
-def display_sample_images(X, y, num_samples=5):
-    """Display sample images from the dataset"""
-    import matplotlib.pyplot as plt
-    
-    fig, axes = plt.subplots(1, num_samples, figsize=(12, 3))
-    if num_samples == 1:
-        axes = [axes]
-    
-    for i in range(num_samples):
-        idx = np.random.randint(len(X))
-        img = X[idx].reshape(28, 28)
-        label = np.argmax(y[idx]) if len(y[idx].shape) == 1 else y[idx]
-        
-        axes[i].imshow(img, cmap='gray')
-        axes[i].set_title(f'Label: {label}')
-        axes[i].axis('off')
-    
-    plt.tight_layout()
-    plt.show()
+def train_and_save_model():
+    """Train model on full MNIST dataset and save it"""
 
-def main():
-    print("=== MNIST Neural Network Demo ===")
-    
     train_path = "MNIST_CSV/mnist_train.csv"
     test_path = "MNIST_CSV/mnist_test.csv"
     
     if not os.path.exists(train_path):
         print(f"Error: Training file not found at {train_path}")
-        print("Please make sure the MNIST CSV files are in the correct location.")
         return
     
     if not os.path.exists(test_path):
         print(f"Error: Test file not found at {test_path}")
-        print("Please make sure the MNIST CSV files are in the correct location.")
         return
     
-    use_full_dataset=True
+    # use_full_dataset=True for entire dataset
     aug_params = {
         'phi': 15,
         'scale': 0.1,
@@ -221,111 +203,44 @@ def main():
     X_train, y_train, X_test, y_test = load_and_preprocess_mnist(
         train_path, 
         test_path, 
-        use_full_dataset=use_full_dataset, 
+        use_full_dataset=True, 
         augmentation_config=aug_params
     )
     
-    if not use_full_dataset:
-        print("\nUsing smaller subset for faster training...")
-        # X_train, y_train, X_test, y_test = create_small_subset(
-        #     X_train, y_train, X_test, y_test, 
-        #     train_samples=10000, test_samples=2000
-        # )
+    print(f"Training on {X_train.shape[0]} samples")
+    print(f"Testing on {X_test.shape[0]} samples")
     
-    print("\nDisplaying sample images...")
-    display_sample_images(X_train, y_train, num_samples=5)
-    
-    # Create neural network for MNIST
+
     print("\nCreating neural network...")
-    nn_mnist = NeuralNetwork(
-        input_size=784,           # 28x28 pixels
-        hidden_layers=[128, 64],  # Two hidden layers
-        output_size=10,           # 10 digits (0-9)
+    model = NeuralNetwork(
+        input_size=784,
+        hidden_layers=[128, 128, 128],
+        output_size=10,
         learning_rate=0.1,
-        activation='relu',        # ReLU
+        activation='relu',
         cost_function='cross_entropy'
     )
     
-    print(f"Network architecture: 784 -> 128 -> 64 -> 10")
-    print(f"Total training samples: {X_train.shape[0]}")
-    print(f"Total test samples: {X_test.shape[0]}")
-    
-    # Train the network
-    print("\nStarting training...")
-    trainer_mnist = Trainer(nn_mnist, verbose=True)
-    
-    history_mnist = trainer_mnist.train(
-        X_train, y_train, 
-        epochs=50, 
+
+    print("Training model...")
+    trainer = Trainer(model, verbose=True)
+    history = trainer.train(
+        X_train, y_train,
+        epochs=250,
         validation_data=(X_test, y_test),
-        batch_size=32
+        batch_size=16
     )
     
-    # Final evaluation
-    print("\n=== Final Evaluation ===")
-    train_accuracy = nn_mnist.compute_accuracy(X_train, y_train)
-    test_accuracy = nn_mnist.compute_accuracy(X_test, y_test)
+    train_accuracy = model.compute_accuracy(X_train, y_train)
+    test_accuracy = model.compute_accuracy(X_test, y_test)
     
-    print(f"Training Accuracy: {train_accuracy * 100:.2f}%")
-    print(f"Test Accuracy: {test_accuracy * 100:.2f}%")
+    print(f"\nFinal Training Accuracy: {train_accuracy * 100:.2f}%")
+    print(f"Final Test Accuracy: {test_accuracy * 100:.2f}%")
     
-    # Display some predictions
-    print("\n=== Sample Predictions ===")
-    sample_indices = np.random.choice(len(X_test), 10, replace=False)
-    for i, idx in enumerate(sample_indices):
-        actual = np.argmax(y_test[idx])
-        prediction = nn_mnist.predict(X_test[idx:idx+1])
-        predicted_class = np.argmax(prediction, axis=1)[0]
-        confidence = np.max(prediction)
-        
-        status = "✓" if actual == predicted_class else "✗"
-        print(f"Sample {i+1}: Actual={actual}, Predicted={predicted_class}, "
-              f"Confidence={confidence:.3f} {status}")
+    save_path = "trained_mnist_model.pkl"
+    save_model(model, save_path)
     
-    # Visualize results
-    print("\nGenerating visualizations...")
-    Visualizer.plot_training_history(history_mnist)
-    
-    # Plot some misclassified examples
-    plot_misclassified_examples(nn_mnist, X_test, y_test)
-
-
-def plot_misclassified_examples(model, X_test, y_test, num_examples=5):
-    """Plot misclassified examples"""
-    try:
-        import matplotlib.pyplot as plt
-        
-        predictions = model.predict(X_test)
-        predicted_classes = np.argmax(predictions, axis=1)
-        true_classes = np.argmax(y_test, axis=1)
-        
-        misclassified = np.where(predicted_classes != true_classes)[0]
-        
-        if len(misclassified) > 0:
-            print(f"\nFound {len(misclassified)} misclassified examples")
-            indices = np.random.choice(misclassified, min(num_examples, len(misclassified)), replace=False)
-            
-            fig, axes = plt.subplots(1, len(indices), figsize=(15, 3))
-            if len(indices) == 1:
-                axes = [axes]
-            
-            for i, idx in enumerate(indices):
-                img = X_test[idx].reshape(28, 28)
-                actual = true_classes[idx]
-                predicted = predicted_classes[idx]
-                confidence = np.max(predictions[idx])
-                
-                axes[i].imshow(img, cmap='gray')
-                axes[i].set_title(f'Actual: {actual}, Pred: {predicted}\nConf: {confidence:.3f}')
-                axes[i].axis('off')
-            
-            plt.tight_layout()
-            plt.show()
-        else:
-            print("No misclassified examples found!")
-            
-    except Exception as e:
-        print(f"Could not plot misclassified examples: {e}")
+    print(f"\nModel saved successfully to {save_path}")
 
 if __name__ == "__main__":
-    main()
+    train_and_save_model()

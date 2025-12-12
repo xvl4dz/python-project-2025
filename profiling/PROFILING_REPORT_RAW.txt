@@ -1,0 +1,68 @@
+============================================================
+ОТЧЕТ ПРОФИЛИРОВАНИЯ (Топ 20 по кумулятивному времени)
+============================================================
+         2603637 function calls (2601931 primitive calls) in 189.356 seconds
+
+   Ordered by: cumulative time
+   List reduced from 470 to 20 due to restriction <20>
+
+   ncalls  tottime  percall  cumtime  percall filename:lineno(function)
+        1    0.000    0.000  189.356  189.356 /mnt/c/Users/recov/OneDrive/Desktop/Neural_Network/python-project-2025/neural_network/scripts/profile_network.py:47(run_training_session)
+        1    2.441    2.441  178.168  178.168 /mnt/c/Users/recov/OneDrive/Desktop/Neural_Network/python-project-2025/neural_network/Trainer.py:24(train)
+    37500    0.114    0.000  106.868    0.003 /mnt/c/Users/recov/OneDrive/Desktop/Neural_Network/python-project-2025/neural_network/NeuralNetwork.py:59(forward)
+   112500  105.492    0.001  106.755    0.001 /mnt/c/Users/recov/OneDrive/Desktop/Neural_Network/python-project-2025/neural_network/Layer.py:34(forward)
+    18750    0.087    0.000   67.597    0.004 /mnt/c/Users/recov/OneDrive/Desktop/Neural_Network/python-project-2025/neural_network/NeuralNetwork.py:75(backward)
+    56250   66.274    0.001   67.349    0.001 /mnt/c/Users/recov/OneDrive/Desktop/Neural_Network/python-project-2025/neural_network/Layer.py:49(backward)
+    18750    0.123    0.000   54.005    0.003 /mnt/c/Users/recov/OneDrive/Desktop/Neural_Network/python-project-2025/neural_network/NeuralNetwork.py:119(compute_accuracy)
+    18750    0.008    0.000   53.435    0.003 /mnt/c/Users/recov/OneDrive/Desktop/Neural_Network/python-project-2025/neural_network/NeuralNetwork.py:95(predict)
+        1    0.001    0.001   11.188   11.188 /mnt/c/Users/recov/OneDrive/Desktop/Neural_Network/python-project-2025/neural_network/scripts/profile_network.py:12(setup_profiling_environment)
+        1    0.035    0.035   11.185   11.185 /mnt/c/Users/recov/OneDrive/Desktop/Neural_Network/python-project-2025/neural_network/scripts/test.py:109(load_and_preprocess_mnist)
+        2    6.213    3.106    8.376    4.188 /mnt/c/Users/recov/OneDrive/Desktop/Neural_Network/python-project-2025/neural_network/scripts/test.py:10(apply_transformations)
+        2    0.000    0.000    2.699    1.349 /usr/lib/python3/dist-packages/pandas/io/parsers/readers.py:848(read_csv)
+        2    0.004    0.002    2.699    1.349 /usr/lib/python3/dist-packages/pandas/io/parsers/readers.py:574(_read)
+        2    0.000    0.000    2.671    1.336 /usr/lib/python3/dist-packages/pandas/io/parsers/readers.py:1732(read)
+        2    2.338    1.169    2.500    1.250 /usr/lib/python3/dist-packages/pandas/io/parsers/c_parser_wrapper.py:222(read)
+   131250    0.816    0.000    1.508    0.000 /mnt/c/Users/recov/OneDrive/Desktop/Neural_Network/python-project-2025/neural_network/Activation.py:15(function)
+    75010    0.046    0.000    1.135    0.000 /usr/lib/python3/dist-packages/numpy/core/fromnumeric.py:53(_wrapfunc)
+    37510    0.034    0.000    1.042    0.000 /usr/lib/python3/dist-packages/numpy/core/fromnumeric.py:2100(clip)
+    37510    0.031    0.000    0.973    0.000 {method 'clip' of 'numpy.ndarray' objects}
+   187500    0.291    0.000    0.944    0.000 /usr/lib/python3/dist-packages/numpy/core/fromnumeric.py:71(_wrapreduction)
+
+
+
+
+============================================================
+ОТЧЕТ ПРОФИЛИРОВАНИЯ (Топ 20 по чистому времени выполнения)
+============================================================
+         2603637 function calls (2601931 primitive calls) in 189.356 seconds
+
+   Ordered by: internal time
+   List reduced from 470 to 20 due to restriction <20>
+
+   ncalls  tottime  percall  cumtime  percall filename:lineno(function)
+   112500  105.492    0.001  106.755    0.001 /mnt/c/Users/recov/OneDrive/Desktop/Neural_Network/python-project-2025/neural_network/Layer.py:34(forward)
+    56250   66.274    0.001   67.349    0.001 /mnt/c/Users/recov/OneDrive/Desktop/Neural_Network/python-project-2025/neural_network/Layer.py:49(backward)
+        2    6.213    3.106    8.376    4.188 /mnt/c/Users/recov/OneDrive/Desktop/Neural_Network/python-project-2025/neural_network/scripts/test.py:10(apply_transformations)
+        1    2.441    2.441  178.168  178.168 /mnt/c/Users/recov/OneDrive/Desktop/Neural_Network/python-project-2025/neural_network/Trainer.py:24(train)
+        2    2.338    1.169    2.500    1.250 /usr/lib/python3/dist-packages/pandas/io/parsers/c_parser_wrapper.py:222(read)
+    37510    0.941    0.000    0.941    0.000 /usr/lib/python3/dist-packages/numpy/core/_methods.py:90(_clip)
+        2    0.921    0.461    0.921    0.461 {method 'normal' of 'numpy.random.mtrand.RandomState' objects}
+   131250    0.816    0.000    1.508    0.000 /mnt/c/Users/recov/OneDrive/Desktop/Neural_Network/python-project-2025/neural_network/Activation.py:15(function)
+    37512    0.734    0.000    0.734    0.000 {method 'astype' of 'numpy.ndarray' objects}
+   225022    0.702    0.000    0.702    0.000 {method 'reduce' of 'numpy.ufunc' objects}
+   187500    0.291    0.000    0.944    0.000 /usr/lib/python3/dist-packages/numpy/core/fromnumeric.py:71(_wrapreduction)
+    37520    0.201    0.000    0.489    0.000 /usr/lib/python3/dist-packages/numpy/core/_methods.py:101(_mean)
+    56250    0.179    0.000    0.654    0.000 /mnt/c/Users/recov/OneDrive/Desktop/Neural_Network/python-project-2025/neural_network/Activation.py:52(derivative)
+    18750    0.178    0.000    0.667    0.000 /mnt/c/Users/recov/OneDrive/Desktop/Neural_Network/python-project-2025/neural_network/Cost.py:75(compute)
+        2    0.151    0.076    0.151    0.076 /usr/lib/python3/dist-packages/pandas/core/internals/managers.py:2194(_stack_arrays)
+    37520    0.135    0.000    0.148    0.000 /usr/lib/python3/dist-packages/numpy/core/_methods.py:67(_count_reduce_items)
+    18750    0.123    0.000   54.005    0.003 /mnt/c/Users/recov/OneDrive/Desktop/Neural_Network/python-project-2025/neural_network/NeuralNetwork.py:119(compute_accuracy)
+   131250    0.122    0.000    0.726    0.000 /usr/lib/python3/dist-packages/numpy/core/fromnumeric.py:2177(sum)
+    37500    0.114    0.000  106.868    0.003 /mnt/c/Users/recov/OneDrive/Desktop/Neural_Network/python-project-2025/neural_network/NeuralNetwork.py:59(forward)
+     1570    0.104    0.000    0.104    0.000 /usr/lib/python3/dist-packages/pandas/core/dtypes/concat.py:52(concat_compat)
+
+
+
+
+Полная статистика сохранена в файл 'profile_stats.prof'
+Вы можете визуализировать её командой: snakeviz profile_stats.prof

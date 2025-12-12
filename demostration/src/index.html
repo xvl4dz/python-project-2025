@@ -1,28 +1,115 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ru">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MNIST-like Drawing Grid with Server</title>
-    <link rel="stylesheet" href="style.css">
+    <title>Демонстрация работы</title>
+    
+    <link rel="stylesheet" href="style.css"> 
+    
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/dat-gui/0.7.9/dat.gui.min.js"></script>
 </head>
 <body>
-    <div class="container">
-        <div class="controls">
-            <button id="clearGrid">Clear Grid</button>
-            <button id="toggleColors">Toggle Colors</button>
-            <button id="toggleGrid">Toggle Grid</button>
-            <button id="showData">Show Data</button>
-            <button id="exportData">Export Data</button>
-            <button id="loadData">Load Data</button>
-            <button id="serverLoad">Load from Server</button>
-            <button id="serverSave">Save to Server</button>
-            <button id="serverClear">Clear Server</button>
+
+    <header class="main-header">
+        <div class="header-content">
+            <h1>Демонстрация работы проекта по Пайтону</h1>
+
+            <h2>Автор: Зарытов Владимир</h2>
+            <nav>
+                <!-- <a href="#interface">1</a>
+                <a href="#about">2</a> -->
+            </nav>
         </div>
-        <div id="gridContainer" class="grid-container"></div>
-        <div id="info" class="info"></div>
-    </div>
+    </header>
+
+    <main class="container">
+        
+        <section class="app-column">
+            <div class="app-card">
+                <div class="app-header">
+                    <h3>Drawing Interface</h3>
+                    <div id="info" class="status-badge">Connecting...</div>
+                </div>
+
+                <div class="drawing-area-visuals"> 
+                    
+                    <div class="drawing-surface-wrapper">
+                        <div class="app-header header-visual">
+                            <h4>High-Resolution Input</h4>
+                        </div>
+                        <div class="grid-wrapper">
+                            <canvas id="drawingCanvas" width="280" height="280"></canvas>
+                        </div>
+                    </div>
+
+                    <div class="model-input-view">
+                        <div class="app-header header-visual">
+                            <h4>Model Input (28x28)</h4>
+                        </div>
+                        <div id="modelInputGridContainer" class="model-input-grid-wrapper">
+                            </div>
+                        <p class="model-input-text">
+                            Что видит нейронка после downsampling.
+                        </p>
+                    </div>
+                </div>
+                <div class="controls-area">
+                    <div class="control-group">
+                        <label>Tools</label>
+                        <div class="button-row">
+                            <button id="clearGrid" class="btn primary">Clear</button>
+                            <button id="toggleColors" class="btn secondary">Invert Colors</button>
+                            <button id="toggleGrid" class="btn secondary" style="display: none;">Grid Lines</button> 
+                        </div>
+                    </div>
+
+                    <div class="control-group server-controls">
+                        <label>Server Sync</label>
+                        <div class="button-row">
+                            <button id="serverLoad" class="btn outline">Pull</button>
+                            <button id="serverSave" class="btn outline">Push</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="results-column">
+            
+            <div class="app-card result-card">
+                <div class="app-header">
+                    <h3>Real-time Prediction</h3>
+                </div>
+
+                <div class="prediction-display">
+                    <span class="pred-label">Top Prediction</span>
+                    <div id="predictionBig" class="pred-big">?</div>
+                    <div id="confidenceBig" class="pred-conf">Waiting for input...</div>
+                </div>
+
+                <div class="probabilities-wrapper">
+                    <h4>Class Probabilities</h4>
+                    <div id="probsContainer" class="probs-list">
+                        </div>
+                </div>
+            </div>
+
+        </section>
+
+    </main>
+
+    <article class="text-block">
+        <h3>Text block</h3>
+        <p>
+            Dunno what to write here for now
+        </p>
+    </article>
+
+    <footer class="main-footer">
+        <p>&copy; 2025. Add <code style="background:#333; padding: 2px 5px; border-radius:3px;">#dev</code> to URL for debug menu.</p>
+    </footer>
 
     <script type="module" src="index.js"></script>
 </body>

@@ -1,36 +1,36 @@
 import { GridRenderer } from './GridRenderer.js';
-import { StylusEngine } from './StylusEngine.js';
 import { ServerClient } from './ServerClient.js';
 import { DataManager } from './DataManager.js';
+import { CanvasEngine } from './CanvasEngine.js'; 
 
 export class DrawingGrid {
     constructor() {
         this.settings = {
             gridSize: 28,
-            stylusSize: 2.9,
-            stylusSoftness: 0.55,
-            darknessIncrement: 255,
-            stylusShape: 'circle',
-            invertColors: true,
-            showGrid: false,
-            mode: 'draw',
+            canvasSize: 280, 
+            invertColors: true, 
             serverEnabled: true,
-            serverUrl: 'http://localhost:5000'
+            serverUrl: 'http://localhost:5000',
+            
+            stylusSize: 15,
+            stylusSoftness: 1.0
         };
         
-        this.gridData = [];
+        this.gridData = Array(this.settings.gridSize * this.settings.gridSize).fill(0); 
+        this.probabilityBars = {};
         this.isDrawing = false;
         this.gui = null;
         
-        this.gridRenderer = new GridRenderer(this);
-        this.stylusEngine = new StylusEngine(this);
+        this.gridRenderer = new GridRenderer(this); 
+        this.canvasEngine = new CanvasEngine(this); 
+        this.dataManager = new DataManager(this); // Initialize DataManager before ServerClient
         this.serverClient = new ServerClient(this);
-        this.dataManager = new DataManager(this);
         
-        this.initializeGUI();
-        this.initializeEventListeners();
-        this.createGrid();
-        this.clearGrid();
+        this.initializeGUI(); 
+        this.initializeEventListeners(); 
+
+        this.canvasEngine.initializeCanvas();
+        this.gridRenderer.createModelInputGrid();
         
         if (this.settings.serverEnabled) {
             this.serverClient.testConnection();
@@ -38,184 +38,134 @@ export class DrawingGrid {
     }
     
     initializeGUI() {
+        if (window.location.hash !== '#dev') return;
+        
         this.gui = new dat.GUI();
         
-        const gridFolder = this.gui.addFolder('Grid Settings');
-        gridFolder.add(this.settings, 'gridSize', 2, 100, 1).name('Grid Size').onChange(() => this.createGrid());
-        gridFolder.add(this.settings, 'showGrid').name('Show Grid Lines').onChange(() => this.toggleGrid());
+        const mainFolder = this.gui.addFolder('Main Settings');
+        mainFolder.add(this.settings, 'serverEnabled').name('Server Enabled');
+        
+        const canvasFolder = this.gui.addFolder('Canvas/Grid Settings');
+        canvasFolder.add(this.settings, 'invertColors').name('Invert Colors')
+            .onChange(() => this.toggleColorsWithClear());
         
         const stylusFolder = this.gui.addFolder('Stylus Settings');
-        stylusFolder.add(this.settings, 'stylusSize', 1, 10, 0.1).name('Stylus Size');
-        stylusFolder.add(this.settings, 'stylusSoftness', 0, 1, 0.05).name('Stylus Softness');
-        stylusFolder.add(this.settings, 'stylusShape', ['circle', 'square']).name('Stylus Shape');
-        
-        const displayFolder = this.gui.addFolder('Display Settings');
-        displayFolder.add(this.settings, 'invertColors').name('White on Black').onChange(() => this.toggleColorsWithClear());
-        displayFolder.add(this.settings, 'mode', ['draw', 'display']).name('Mode').onChange(() => this.toggleMode());
-        
-        const serverFolder = this.gui.addFolder('Server Settings');
-        serverFolder.add(this.settings, 'serverEnabled').name('Server Enabled').onChange(() => this.toggleServer());
-        serverFolder.add(this.settings, 'serverUrl').name('Server URL');
-        
-        const actionsFolder = this.gui.addFolder('Actions');
-        actionsFolder.add(this, 'clearGrid').name('Clear Grid');
-        actionsFolder.add(this, 'showGridData').name('Show Data');
-        actionsFolder.add(this, 'exportGridData').name('Export Data');
-        actionsFolder.add(this, 'loadExampleData').name('Load Example');
-        actionsFolder.add(this, 'loadFromServer').name('Load from Server');
-        actionsFolder.add(this, 'saveToServer').name('Save to Server');
-        
-        gridFolder.open();
+        stylusFolder.add(this.settings, 'stylusSize', 1, 30).name('Size (px)')
+            .onChange(() => this.canvasEngine.applyStyle());
+        stylusFolder.add(this.settings, 'stylusSoftness', 0.1, 1.0).name('Softness (Alpha)')
+            .onChange(() => this.canvasEngine.applyStyle());
+
+        mainFolder.open();
+        canvasFolder.open();
         stylusFolder.open();
-        displayFolder.open();
-        serverFolder.open();
-        actionsFolder.open();
     }
     
     initializeEventListeners() {
-        document.getElementById('clearGrid').addEventListener('click', () => this.clearGrid());
-        document.getElementById('showData').addEventListener('click', () => this.showGridData());
-        document.getElementById('exportData').addEventListener('click', () => this.exportGridData());
+        document.getElementById('clearGrid').addEventListener('click', () => {
+            this.clearGrid();
+        });
         document.getElementById('toggleColors').addEventListener('click', () => this.toggleColorsWithClear());
-        document.getElementById('toggleGrid').addEventListener('click', () => this.toggleGridLines());
-        document.getElementById('loadData').addEventListener('click', () => this.promptLoadData());
-        document.getElementById('serverLoad').addEventListener('click', () => this.loadFromServer());
-        document.getElementById('serverSave').addEventListener('click', () => this.saveToServer());
-        document.getElementById('serverClear').addEventListener('click', () => this.clearServer());
+        
+        document.getElementById('serverLoad').addEventListener('click', () => this.serverClient.loadFromServer());
+        document.getElementById('serverSave').addEventListener('click', () => this.serverClient.saveToServer());
     }
-    
-    createGrid() { 
-        this.gridRenderer.createGrid(); 
-    }
-    
-    applyStylus(centerIndex) { 
-        this.stylusEngine.applyStylus(centerIndex); 
-    }
-    
-    updateCellAppearance(index, value) { 
-        this.gridRenderer.updateCellAppearance(index, value); 
+
+    processDrawingUpdate() {
+        this.gridData = this.canvasEngine.downsampleCanvas();
+        this.gridRenderer.updateModelInputGrid(this.gridData); 
+        this.triggerServerUpdate();
     }
     
     clearGrid() { 
-        this.dataManager.clearGrid(); 
-    }
-    
-    displayData(dataArray) { 
-        return this.dataManager.displayData(dataArray); 
-    }
-    
-    loadFromServer() { 
-        this.serverClient.loadFromServer(); 
-    }
-    
-    saveToServer() { 
-        this.serverClient.saveToServer(); 
-    }
-    
-    clearServer() { 
-        this.serverClient.clearServer(); 
-    }
-    
-    exportGridData() { 
-        this.dataManager.exportGridData(); 
-    }
-    
-    showGridData() { 
-        this.dataManager.showGridData(); 
-    }
-    
-    loadExampleData() { 
-        this.dataManager.loadExampleData(); 
-    }
-    
-    promptLoadData() { 
-        this.dataManager.promptLoadData(); 
+        this.canvasEngine.clearCanvas();
+        this.gridData.fill(0);
+        this.gridRenderer.updateModelInputGrid(this.gridData);
+        
+        this.updatePredictionDisplay({ 
+            prediction: '?', 
+            confidence: 0, 
+            probabilities: Array(10).fill(0),
+            labels: Object.keys(this.probabilityBars) 
+        });
     }
     
     toggleColorsWithClear() {
-        for (let i = 0; i < this.gridData.length; i++) {
-            this.gridData[i] = 255 - this.gridData[i];
-        }
-        
         this.settings.invertColors = !this.settings.invertColors;
+        this.canvasEngine.applyStyle();
+        this.clearGrid();
+        this.triggerServerUpdate(); 
+    }
+
+    // Called by ServerClient when connected to generate the progress bars
+    initializePredictionUI(labels) {
+        const container = document.getElementById('probsContainer');
+        if (!container) return;
+
+        container.innerHTML = '';
+        this.probabilityBars = {}; 
+
+        labels.forEach(label => {
+            const row = document.createElement('div');
+            row.className = 'prob-row';
+            
+            row.innerHTML = `
+                <span class="prob-label">${label}</span>
+                <div class="prob-track">
+                    <div class="prob-fill" style="width: 0%"></div>
+                </div>
+                <span class="prob-value">0%</span>
+            `;
+            
+            container.appendChild(row);
+            
+            this.probabilityBars[label] = {
+                fill: row.querySelector('.prob-fill'),
+                value: row.querySelector('.prob-value')
+            };
+        });
+    }
+
+    // Called by ServerClient on update
+    updatePredictionDisplay(data) {
+        if (!data) return;
+
+        const predBig = document.getElementById('predictionBig');
+        const confBig = document.getElementById('confidenceBig');
         
-        const grid = document.querySelector('.grid');
-        if (grid) {
-            if (!this.settings.showGrid) {
-                grid.style.gap = '0px';
-                grid.style.backgroundColor = this.settings.invertColors ? 'black' : '#ccc';
-            } else {
-                grid.style.gap = '1px';
-                grid.style.backgroundColor = '#ccc';
-            }
-        }
-        
-        for (let i = 0; i < this.gridData.length; i++) {
-            this.updateCellAppearance(i, this.gridData[i]);
-        }
-        
-        this.updateInfo();
-    }
-    
-    toggleMode() {
-        this.createGrid();
-        this.updateInfo();
-    }
-    
-    toggleGrid() {
-        const grid = document.querySelector('.grid');
-        if (grid) {
-            if (!this.settings.showGrid) {
-                grid.style.gap = '0px';
-                grid.style.backgroundColor = this.settings.invertColors ? 'black' : '#ccc';
-            } else {
-                grid.style.gap = '1px';
-                grid.style.backgroundColor = '#ccc';
-            }
+        if (predBig) predBig.innerText = data.prediction || '?';
+        if (confBig) confBig.innerText = data.confidence 
+            ? `${(data.confidence * 100).toFixed(1)}% Confidence` 
+            : 'Waiting...';
+
+        if (data.probabilities && data.labels) {
+            data.labels.forEach((label, index) => {
+                const prob = data.probabilities[index] || 0;
+                const percent = (prob * 100).toFixed(1) + '%';
+                
+                if (this.probabilityBars[label]) {
+                    this.probabilityBars[label].fill.style.width = percent;
+                    this.probabilityBars[label].value.innerText = percent;
+                    
+                    if (prob > 0.5) {
+                        this.probabilityBars[label].fill.classList.add('high');
+                    } else {
+                        this.probabilityBars[label].fill.classList.remove('high');
+                    }
+                }
+            });
         }
     }
-    
-    toggleGridLines() {
-        this.settings.showGrid = !this.settings.showGrid;
-        this.toggleGrid();
-        this.updateInfo();
+
+    displayData(data) {
+        this.dataManager.displayData(data);
+    }
+
+    triggerServerUpdate() { 
+        this.serverClient.updateServer(); 
     }
     
-    toggleServer() {
-        if (this.settings.serverEnabled) {
-            this.serverClient.testConnection();
-        }
-    }
-    
-    updateInfo(additionalInfo = '') {
-        const info = document.getElementById('info');
-        const mode = this.settings.invertColors ? 'White on Black' : 'Black on White';
-        const gridStatus = this.settings.showGrid ? 'Visible' : 'Hidden';
-        const interactionMode = this.settings.mode === 'draw' ? 'Drawing' : 'Display';
-        const serverStatus = this.settings.serverEnabled ? 'Connected' : 'Disabled';
-        
-        let infoText = `Grid: ${this.settings.gridSize}×${this.settings.gridSize} | Mode: ${mode} | Grid: ${gridStatus} | Interaction: ${interactionMode} | Server: ${serverStatus}`;
-        
-        if (additionalInfo) {
-            infoText += ` | ${additionalInfo}`;
-        }
-        
-        info.innerHTML = infoText;
-    }
-    
-    getGridData2D() {
-        const grid2D = [];
-        for (let i = 0; i < this.settings.gridSize; i++) {
-            const row = [];
-            for (let j = 0; j < this.settings.gridSize; j++) {
-                row.push(this.gridData[i * this.settings.gridSize + j]);
-            }
-            grid2D.push(row);
-        }
-        return grid2D;
-    }
-    
-    getGridDataFlat() {
-        return [...this.gridData];
+    updateInfo(msg) { 
+        const infoEl = document.getElementById('info');
+        if (infoEl) infoEl.innerHTML = msg || 'Ready'; 
     }
 }

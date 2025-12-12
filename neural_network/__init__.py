@@ -18,9 +18,11 @@ from .Cost import (
     BinaryCrossEntropy
 )
 
-# Users can still do: from neural_network.Cost import get_cost_function
+# Users can do: from neural_network.Cost import get_cost_function
 import sys
 from . import Cost
+
+from .scripts.test import load_and_preprocess_mnist
 
 __all__ = [
     'NeuralNetwork',
@@ -33,7 +35,8 @@ __all__ = [
     'MSE',
     'CrossEntropy',
     'BinaryCrossEntropy',
-    'Cost'
+    'Cost',
+    'load_and_preprocess_mnist'
 ]
 
 __version__ = '1.0.0'

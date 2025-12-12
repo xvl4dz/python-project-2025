@@ -1,113 +1,127 @@
 export class ServerClient {
     constructor(drawingGrid) {
         this.drawingGrid = drawingGrid;
+        this.dataManager = drawingGrid.dataManager;
+        this.url = drawingGrid.settings.serverUrl;
     }
-    
-    async testConnection() {
-        try {
-            const response = await fetch(`${this.drawingGrid.settings.serverUrl}/api/info`);
-            if (response.ok) {
-                const data = await response.json();
-                console.log('Server connected:', data);
-                this.drawingGrid.updateInfo('Server: Connected');
-            } else {
-                console.warn('Server not responding');
-                this.drawingGrid.updateInfo('Server: Not connected');
-            }
-        } catch (error) {
-            console.warn('Cannot connect to server:', error);
-            this.drawingGrid.updateInfo('Server: Not connected');
-        }
-    }
-    
-    async updateServer() {
-        try {
-            const response = await fetch(`${this.drawingGrid.settings.serverUrl}/api/update`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    gridData: this.drawingGrid.gridData,
-                    gridSize: this.drawingGrid.settings.gridSize
-                })
+
+    testConnection() {
+        this.drawingGrid.updateInfo('Connecting...');
+        
+        fetch(this.url + '/api/info') 
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                const modelStatus = data.model_loaded ? 'Model Loaded' : 'No Model';
+                this.drawingGrid.updateInfo(`Connected: ${modelStatus}`);
+                
+                if (this.drawingGrid.initializePredictionUI) {
+                    this.drawingGrid.initializePredictionUI(data.class_labels); 
+                }
+                
+                this.loadFromServer(true);
+            })
+            .catch(error => {
+                console.error("Connection failed:", error);
+                this.drawingGrid.updateInfo('Connection Failed');
             });
-            
-            if (response.ok) {
-                const data = await response.json();
-                console.log('Server updated:', data.message);
-            } else {
-                console.error('Failed to update server');
-            }
-        } catch (error) {
-            console.error('Error updating server:', error);
-        }
     }
-    
-    async loadFromServer() {
-        if (!this.drawingGrid.settings.serverEnabled) {
-            alert('Server is not enabled');
+
+    updateServer() {
+        if (!this.drawingGrid.settings.serverEnabled) return;
+        
+        if (!this.drawingGrid.dataManager) {
+            console.error("DataManager not available, skipping server update.");
             return;
         }
-        
-        try {
-            const response = await fetch(`${this.drawingGrid.settings.serverUrl}/api/drawing`);
-            if (response.ok) {
-                const data = await response.json();
-                this.drawingGrid.displayData(data.gridData);
-                console.log('Loaded from server:', data.message);
-                this.drawingGrid.updateInfo('Loaded from server');
-            } else {
-                alert('No drawing available on server');
+
+        const dataPayload = {
+            gridData: this.drawingGrid.dataManager.getGridData2D(),
+            gridSize: this.drawingGrid.settings.gridSize
+        };
+
+        fetch(this.url + '/api/update', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(dataPayload)
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
             }
-        } catch (error) {
-            console.error('Error loading from server:', error);
-            alert('Error loading from server: ' + error.message);
-        }
+            return response.json();
+        })
+        .then(data => {
+            if (this.drawingGrid.updatePredictionDisplay) {
+                this.drawingGrid.updatePredictionDisplay(data);
+            }
+        })
+        .catch(error => {
+            console.error("Prediction update failed:", error);
+        });
     }
-    
-    async saveToServer() {
-        if (!this.drawingGrid.settings.serverEnabled) {
-            alert('Server is not enabled');
-            return;
-        }
-        
-        try {
-            const response = await fetch(`${this.drawingGrid.settings.serverUrl}/api/save`, {
-                method: 'POST'
+
+    loadFromServer(isInitialLoad = false) {
+        if (!this.drawingGrid.dataManager) return;
+        this.drawingGrid.updateInfo(isInitialLoad ? 'Checking for saved data...' : 'Pulling data...');
+
+        fetch(this.url + '/api/drawing')
+            .then(response => {
+                if (response.status === 404) {
+                    if (!isInitialLoad) {
+                        this.drawingGrid.updateInfo('No saved drawing found.');
+                    }
+                    return null;
+                }
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data && data.gridData) {
+                    this.drawingGrid.dataManager.displayData(data.gridData);
+                    this.drawingGrid.updateInfo(isInitialLoad ? 'Initial data loaded.' : 'Data loaded successfully');
+                } else if (data) {
+                    console.warn('Received data but missing gridData key:', data);
+                }
+            })
+            .catch(error => {
+                console.error("Load failed:", error);
+                this.drawingGrid.updateInfo('Load Failed');
             });
-            
-            if (response.ok) {
-                const data = await response.json();
-                alert(`Drawing saved as: ${data.filename}`);
-                console.log('Saved to server:', data.message);
-            } else {
-                const error = await response.json();
-                alert('Error saving: ' + error.error);
-            }
-        } catch (error) {
-            console.error('Error saving to server:', error);
-            alert('Error saving to server: ' + error.message);
-        }
     }
-    
-    async clearServer() {
-        if (!this.drawingGrid.settings.serverEnabled) {
-            alert('Server is not enabled');
-            return;
-        }
+
+    saveToServer() {
+        if (!this.drawingGrid.dataManager) return;
+        this.drawingGrid.updateInfo('Pushing data...');
         
-        try {
-            const response = await fetch(`${this.drawingGrid.settings.serverUrl}/api/clear`, {
-                method: 'POST'
-            });
-            
-            if (response.ok) {
-                console.log('Server drawing cleared');
-                this.drawingGrid.updateInfo('Server drawing cleared');
+        const dataPayload = {
+            gridData: this.drawingGrid.dataManager.getGridData2D(),
+            gridSize: this.drawingGrid.settings.gridSize
+        };
+
+        fetch(this.url + '/api/save', { 
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(dataPayload)
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
             }
-        } catch (error) {
-            console.error('Error clearing server:', error);
-        }
+            return response.json();
+        })
+        .then(data => {
+            this.drawingGrid.updateInfo('Data saved successfully');
+        })
+        .catch(error => {
+            console.error("Save failed:", error);
+            this.drawingGrid.updateInfo('Save Failed');
+        });
     }
 }

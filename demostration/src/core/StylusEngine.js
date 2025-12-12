@@ -1,8 +1,9 @@
 export class StylusEngine {
     constructor(drawingGrid) {
         this.drawingGrid = drawingGrid;
-        this.lastUpdateTime = 0;
-        this.updateDebounce = 100;
+        
+        this.serverUpdateTimer = null;
+        this.DEBOUNCE_DELAY = 500; // 0.5 seconds
     }
     
     applyStylus(centerIndex) {
@@ -18,14 +19,14 @@ export class StylusEngine {
             if (this.drawingGrid.settings.invertColors) {
                 newValue = Math.min(255, currentValue + valueChange);
             } else {
-                newValue = Math.min(255, currentValue + valueChange);
+                newValue = Math.max(0, currentValue - valueChange);
             }
             
             this.drawingGrid.gridData[cell.index] = newValue;
             this.drawingGrid.updateCellAppearance(cell.index, newValue);
         });
         
-        this.updateServer();
+        this.queueServerUpdate();
     }
     
     getAffectedCells(centerIndex) {
@@ -68,35 +69,19 @@ export class StylusEngine {
         return Math.sqrt(Math.pow(row2 - row1, 2) + Math.pow(col2 - col1, 2));
     }
     
-    async updateServer() {
+    queueServerUpdate() {
         if (!this.drawingGrid.settings.serverEnabled) return;
-        
-        const now = Date.now();
-        if (now - this.lastUpdateTime < this.updateDebounce) {
-            return;
+
+        if (this.serverUpdateTimer) {
+            clearTimeout(this.serverUpdateTimer);
         }
-        this.lastUpdateTime = now;
-        
-        try {
-            const response = await fetch(`${this.drawingGrid.settings.serverUrl}/api/update`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    gridData: this.drawingGrid.gridData,
-                    gridSize: this.drawingGrid.settings.gridSize
-                })
-            });
-            
-            if (response.ok) {
-                const data = await response.json();
-                console.log('Server updated:', data.message);
-            } else {
-                console.error('Failed to update server');
-            }
-        } catch (error) {
-            console.error('Error updating server:', error);
-        }
+
+        this.serverUpdateTimer = setTimeout(() => {
+            this.triggerServerUpdate();
+        }, this.DEBOUNCE_DELAY);
+    }
+
+    triggerServerUpdate() {
+        this.drawingGrid.triggerServerUpdate();
     }
 }

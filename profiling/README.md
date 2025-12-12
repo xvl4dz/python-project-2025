@@ -1,0 +1,1 @@
+Profiling script can be found at `neural_network/scripts/profile_network.py`
